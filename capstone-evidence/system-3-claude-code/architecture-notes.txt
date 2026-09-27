@@ -1,0 +1,25 @@
+System 3 — Claude Code configuration evidence (from actual repo, solution 04-plan-mode-and-explore-decision-doc)
+
+Validator: `python -m ecommerce_team_config .` prints OK, exit 0 (see validator-output.txt). Tests: `pytest tests/ -v` 35 passed (see test-output.txt).
+
+1. Root/project CLAUDE.md: ./CLAUDE.md (project-level entry point; ~shared conventions + scope table). Copies in config/CLAUDE.md.
+2. @import usage: CLAUDE.md lists `@.claude/standards/frontend.md`, `@.claude/standards/api.md`, `@.claude/standards/database.md`, `@.claude/standards/testing.md` (modular standards; keeps entry point scannable and under 200 lines per test_ac_01_04).
+3. Modular standards: .claude/standards/{frontend,api,database,testing}.md.
+4. .claude/rules/*.md: react.md, api.md, tests.md (path-scoped rules). Copies in config/.claude/rules/.
+5. YAML frontmatter with path/glob patterns:
+   - react.md: paths ["src/components/**/*", "src/pages/**/*"]
+   - api.md: paths ["src/api/**/*"]
+   - tests.md: paths ["**/*.test.tsx", "**/*.test.ts"]
+   Each file also has a `description:` line. Verified by test_ac_02_01..06 (including overlap: a test file under src/components matches react+tests rules).
+6. Project-scoped slash command: .claude/commands/review.md (NOT ~/.claude — lives in repo, in git). Frontmatter: description + argument-hint `<pr-number | ...>` + read-oriented allowed-tools (Read, Grep, Glob, Bash(git diff/log/show/status:*), Bash(gh pr diff/view/checks:*)). Body: interview pattern, must-report-vs-skip criteria, interacting-vs-independent guidance, two concrete I/O examples.
+7. Forked skill: .claude/skills/deploy-check/SKILL.md. Copy in config/.claude/skills/deploy-check/SKILL.md.
+8. `context: fork`: SKILL.md frontmatter contains exactly `context: fork` (with name: deploy-check, description, argument-hint, allowed-tools).
+9. Read-only allowed-tools: skill allowlist is Read, Grep, Glob, Bash(git status/diff/log/rev-parse/ls-files:*), Bash(gh pr view/checks:*) — no Edit/Write; the three checks (uncommitted changes, migrations, CI green) only inspect. Rationale section: fork keeps verbose discovery output out of the main session; only the pass/fail summary returns.
+10. Plan-mode/explore decision doc: docs/plan-mode-vs-direct-execution.md (copy in config/). Sections: (1) plan-mode example extracting shared useCart hook from Cart/Checkout/MiniCart ("prevent costly rework"); (2) direct execution adding min:0 validation in src/api/orders/handler.ts; (3) explore subagent inventorying processRefund call sites across refund.ts/billing/issue.ts/services/payment.ts with scratchpad pattern; (4) combined workflow renaming ordersRepo.findById->getById in src/db/orders.ts (plan for investigation, direct for mechanical rename); plus Knight-Webb curriculum citation. All cited paths exist (test_ac_05_06).
+
+Why path-scoped rules beat directory-level CLAUDE.md for cross-cutting conventions:
+- CLAUDE.md scope table states the preference explicitly: ".claude/rules/ with glob paths: instead, so cross-cutting conventions (e.g. test files everywhere) work cleanly." A directory-level CLAUDE.md only fires for files under that directory; tests.md globs (**/*.test.ts) fire for co-located test files anywhere in the tree, and layer on top of react/api rules. Verified by test_ac_02_06 (test file matches react AND tests rules).
+
+Why deploy-check uses forked context + read-only tools:
+- Fork: isolates megabytes of enumeration output (file lists, diff parsing, check traces) in the sub-agent; main session receives only the structured verdict summary. Without it, the main context is contaminated with throwaway discovery output. Skill cites Branching Reality pattern; notes skill-level `context: fork` vs session-level fork_session.
+- Read-only: skill never modifies files/pushes/deploys; without the constraint a pre-deploy check could itself mutate the tree it is validating (blast radius: a mistaken write during a read-only audit).

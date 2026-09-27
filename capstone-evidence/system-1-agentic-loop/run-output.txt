@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Prakhar\Downloads\1790500151\Build a Claims Intake Agent with a stop_reason-Driven Loop\exercises\03-dynamic-decomposition\solution\claims_intake\run.py", line 239, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\Prakhar\Downloads\1790500151\Build a Claims Intake Agent with a stop_reason-Driven Loop\exercises\03-dynamic-decomposition\solution\claims_intake\run.py", line 192, in main
+    client = make_client()
+             ^^^^^^^^^^^^^
+  File "C:\Users\Prakhar\Downloads\1790500151\Build a Claims Intake Agent with a stop_reason-Driven Loop\exercises\03-dynamic-decomposition\solution\claims_intake\client.py", line 12, in make_client
+    raise RuntimeError(
+RuntimeError: ANTHROPIC_API_KEY is not set. Export it before running, e.g.:
+    export ANTHROPIC_API_KEY=sk-ant-...
+RUN_EXIT=1

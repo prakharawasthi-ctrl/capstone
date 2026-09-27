@@ -1,0 +1,11 @@
+[2026-09-27T09:35:28Z] evidence dirs created
+[2026-09-27T09:35:33Z] S3 setup start
+[2026-09-27T09:36:50Z] S3 pytest done exit=0
+[2026-09-27T09:37:08Z] S1 setup start
+[2026-09-27T09:41:13Z] S2 setup start
+[2026-09-27T09:43:37Z] S4 setup start
+[2026-09-27T09:52:26Z] S1 pytest: 29 passed / live run blocked (no API key) / offline trace routed
+[2026-09-27T09:52:26Z] S2 pytest: 28 passed 2 skipped / --build blocked (no key, WinError 206) / offline measurements captured
+[2026-09-27T09:52:26Z] S3 pytest: 35 passed / validator OK exit 0
+[2026-09-27T09:52:26Z] S4 pytest: 33 passed / shift C 17 defects exit 0 / hot 980B / forks+recovery demoed
+[2026-09-27T09:52:26Z] reflection, checklist, test-summary, FINAL-REPORT written; quality checks passed

@@ -1,0 +1,46 @@
+System 1 — Agentic loop architecture (from actual source, solution 03-dynamic-decomposition)
+
+Main agent loop:
+- File: claims_intake/loop.py
+- Function: run(*, client, model, system, tools, messages, tool_executor, budget, tracer, max_tokens=4096) -> FinalState
+- Loop construct: `while True:` with `turn += 1` at top; no `for _ in range(N)` cap.
+
+stop_reason inspection:
+- File: claims_intake/loop.py, function run()
+- `if response.stop_reason == "end_turn":` -> append assistant message, return FinalState (termination).
+- `if response.stop_reason == "tool_use":` -> append assistant message, execute each block with type=="tool_use" via tool_executor(name, input), append tool_result user message, `continue` (continuation).
+- Fallthrough: `raise UnexpectedStopReason(f"turn {turn}: unexpected stop_reason={response.stop_reason!r}")` for any other value (e.g. max_tokens, stop_sequence, tool_use with no blocks is still tool_use).
+
+Per-turn trace:
+- File: claims_intake/tracer.py, class Tracer.write(event) / NullTracer.write(event) (in-memory for tests).
+- Loop writes dict {turn, stop_reason, tool_calls:[{id,name,input}], latency_ms, input_tokens, output_tokens} every turn before branching.
+- Evidence: capstone-evidence/system-1-agentic-loop/trace-claim_01_kitchen_fire.jsonl shows turns 1-5 stop_reason=tool_use with tool_calls, turn 6 stop_reason=end_turn with [].
+
+Budget safety net (not primary stop):
+- File: claims_intake/budget.py, class Budget; methods check() and record_input_tokens().
+- Loop calls budget.check() each iteration and budget.record_input_tokens() after each response; raises BudgetExceeded (caught in run.py as error, not silent truncation).
+
+Tool executor contract:
+- File: claims_intake/tools.py, function make_executor(session) -> Executor; dispatch dict _DISPATCH maps 7 tool names to _t_* handlers.
+- Errors returned as JSON string {"is_error": true, ...}, never raised to loop (see _t_* and execute() try/except).
+- Terminal tools: _t_route_to_adjuster and _t_escalate_to_human; enforce exactly-one-terminal via session.terminal_called short-circuit returning graceful error.
+- Clarification: _t_request_clarification matches question against session.clarification_responses (wired in run.py from fixture["clarification_responses"]) case-insensitively, else "NO_RESPONSE".
+
+Session state:
+- File: claims_intake/session.py, class ClaimSession (claim_id, policy_id, run_dir, policies, clarification_responses, case_facts, classification, severity, clarifications_asked, routing, escalation; properties terminal_called, outcome).
+
+Runner:
+- File: claims_intake/run.py; _run_one() builds ClaimSession + Budget + Tracer and calls loop.run; main() requires --all or --fixture, constructs client via claims_intake/client.py make_client() (fails fast without ANTHROPIC_API_KEY), writes runs/<stamp>/summary.md + traces/*.jsonl + queues/*.jsonl + escalations.jsonl; exit 1 if any claim not terminal.
+
+Client/model:
+- File: claims_intake/client.py; make_client() reads ANTHROPIC_API_KEY; DEFAULT_MODEL = "claude-haiku-4-5-20251001".
+
+Anti-pattern explicitly avoided (verified by tests/test_antipatterns.py):
+- No string-membership tests against assistant text drive control flow (test_no_string_membership_against_text_in_loop: flags `"x" in ...` in loop.py).
+- No integer-literal iteration cap as primary stop (test_no_integer_literal_iteration_cap_in_loop: flags `for _ in range(<int>)` / `while x < <int>`); Budget from config is the allowed safety net.
+- stop_reason must be referenced and must gate a return/raise inside the while loop (test_stop_reason_is_loop_control).
+- No `if claim_type == "..."` branching in Python outside tools.py/pricing.py (test_no_claim_type_equality_branching_in_package) — claim-type decisions belong to the model via tool calls.
+
+Live-run limitation in this environment:
+- `python -m claims_intake.run --all` exits 1 with RuntimeError: ANTHROPIC_API_KEY is not set (see run-output.txt). No key was invented.
+- Supplementary offline evidence (offline-trace.txt + trace-claim_01_kitchen_fire.jsonl) drives the REAL loop.run + REAL make_executor with scripted FakeClient responses (tests/fakes.py) to demonstrate the identical stop_reason contract: 5x tool_use continuations then end_turn termination, final outcome=routed.

@@ -1,0 +1,37 @@
+System 2 — Context strategy architecture (from actual source, solution 04-assemble-and-locate)
+
+Live-run limitation in this environment:
+- `pytest tests/ -v`: 28 passed, 2 skipped (the 2 skips are test_assembled_context_active_segment_byte_exact and test_budget_json_section_counts_sum_consistently, which skip with "no run artifacts available — run python -m retail_context.run --build first"). See test-output.txt.
+- `python -m retail_context.run --build`: FAILED. Baseline computed (47144 tokens), then case-facts extraction attempted the Claude Code CLI fallback (no ANTHROPIC_API_KEY) and crashed with FileNotFoundError: [WinError 206] The filename or extension is too long — the assembled prompt exceeds Windows CreateProcess argv limits. See run-output.txt. No key was invented; no budget.json / eval.jsonl / eval_control.jsonl was fabricated. The reference README numbers (budget 20,350 assembled, 56.83% reduction, 6/6 eval) are quoted in code/README only, not claimed as this run's output.
+
+Deterministic offline evidence actually measured (see offline-measurements.txt):
+- Baseline transcript tokens: 47144 (heuristic len/3.8, no API key) — matches README's 47,144 baseline.
+- Transcript: 48 turns; refund=(1,14) resolved, subscription=(15,28) resolved, payment_update=(29,48) active.
+- Pruner: data/lookup_order_response.json has 57 fields; prune_lookup_order keeps exactly {order_id, order_date, order_total_usd, fulfillment_status, return_eligible_until}; 532 tokens -> 45 tokens (<=200 contract).
+- Case-facts block: 149 tokens (matches README's 149) for all 12 REQUIRED_FIELDS.
+- Active verbatim: 19538 tokens (matches README's 19,538), byte-exact (active_raw_text == join of turns 29-48 renders).
+- Assembled total with SYNTHETIC resolved placeholders: 19758 tokens, 58.09% reduction — labeled synthetic; real resolved summaries (~296 + ~365 tokens) require LLM calls.
+
+How verbose tool output is pruned:
+- File: retail_context/pruner.py; function prune_lookup_order(raw) -> {5 kept fields}; constant KEPT_FIELDS; raises PrunerMissingFieldError if any kept field missing. Deterministic — no anthropic import (enforced by test_pruner_has_no_anthropic_import). Order of keys preserved.
+
+How persistent case facts are maintained:
+- File: retail_context/case_facts.py; dataclass CaseFacts with 12 REQUIRED_FIELDS (customer_id, refund_*, subscription_*, payment/new-card fields); method to_markdown() renders "# Case Facts" block in fixed key order (<=600 tokens); extract() is the single LLM call that populates it (needs API/CLI); CaseFactExtractionError lists missing fields.
+
+How conversation history is compressed:
+- File: retail_context/compressor.py; function summarize_segment(segment) refuses active segments (raises ValueError "resolved") — only resolved refund/subscription segments are summarized via prompts/compression_prompt.md through client.complete_with_system(); dataclasses Summary(input_tokens, output_tokens) and Compressed(summaries, active_text, active_issue_id); function compress(t) orchestrates both resolved segments.
+
+How token budget is enforced:
+- File: retail_context/tokens.py; single canonical function count(text) (+ count_many); methodology() reports "Anthropic messages.count_tokens endpoint" when ANTHROPIC_API_KEY set else "len(text)/3.8 heuristic". No other module may reference count_tokens or len()/N heuristics (enforced by test_only_tokens_module_uses_count_tokens_or_heuristic). Budget recorded in run.py _build() as {token_counter_methodology, baseline_tokens, assembled_tokens, reduction_pct, per_section_tokens, compression_api{input/output tokens}}.
+
+How final prompt is assembled:
+- File: retail_context/assemble.py; function build(case_facts: CaseFacts, compressed: Compressed) -> AssembledContext; order contract: "# Case Facts" (top boundary) -> "# Resolved: Refund inquiry" -> "# Resolved: Subscription cancellation" (compressible middle) -> "# Active issue: Payment-method update" (bottom boundary, byte-exact verbatim). Methods section_tokens() and total_tokens() flow through tokens.count. Byte-exactness asserted by test_active_segment_byte_exact.
+
+What is preserved verbatim:
+- Active issue turns 29-48 (payment-method update: AVS_MISMATCH, card last-4 7782) — every turn-by-turn nuance is decision-load-bearing while resolution is open. Case-facts identifiers/structured tokens (e.g. in_progress status token, $22.14, IDs) at top boundary.
+
+What is summarized:
+- Resolved refund (turns 1-14) and resolved subscription (turns 15-28) narratives — facts stabilized (amounts, IDs, statuses, dates), compressible ~13k tokens each to <500 tokens (~97.5% on resolved portion per README). Middle placement exploits "lost in the middle" tolerance for resolved content.
+
+Eval design (not executed here — needs LLM):
+- File: retail_context/evaluate.py; functions run_questions(), write_jsonl(), strip_case_facts(); data/eval_questions.json defines 6 questions (Q1/Q6 sourced from case_facts with required_in_control_fail=true; Q2/Q5 from subscription summary; Q3/Q4 from active verbatim). Control variant strips case-facts block and re-runs Q1+Q6; reference result: Q6 fails (in_progress token only in case facts), Q1 unexpectedly passes ($22.14 duplicated in summary).

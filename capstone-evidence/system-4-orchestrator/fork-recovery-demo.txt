@@ -1,0 +1,9 @@
+fork1: data\forks\lot-2026-0430-B-dielectric | base bytes: 980
+fork2: data\forks\bank-C-7-calibration-drift
+fork1 entries: ['lot-2026-0430-B-dielectric']
+fork2 entries: ['bank-C-7-calibration-drift']
+base hot unchanged bytes: 980
+main scratchpad lines now: 3
+threshold_min: 30 | fresh-crash(10min): resume
+stale-crash(60min): fresh
+complete-manifest: fresh

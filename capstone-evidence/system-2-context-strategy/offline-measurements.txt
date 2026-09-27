@@ -1,0 +1,15 @@
+methodology: len(text) / 3.8 heuristic (no API key available)
+baseline transcript tokens: 47144
+turns: 48 refund=(1, 14) subscription=(15, 28) active=(29, 48)
+lookup_order raw fields: 57
+pruned fields: ('order_id', 'order_date', 'order_total_usd', 'fulfillment_status', 'return_eligible_until') (contract: ('order_id', 'order_date', 'order_total_usd', 'fulfillment_status', 'return_eligible_until'))
+raw tokens: 532 pruned tokens: 45
+per-section tokens (SYNTHETIC resolved summaries):
+  case_facts: 149
+  resolved_refund: 29
+  resolved_subscription: 40
+  active: 19538
+assembled total: 19758
+reduction vs baseline: 58.09% (with synthetic summaries — NOT the reference 56.83% eval number)
+active byte-exact check: True
+case facts header present: True

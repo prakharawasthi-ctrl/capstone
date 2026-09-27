@@ -1,0 +1,33 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\Prakhar\Downloads\1790500151\Engineer a Long-Conversation Context Strategy for a Retail Support Copilot\04-assemble-and-locate\solution\retail_context\run.py", line 148, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Prakhar\Downloads\1790500151\Engineer a Long-Conversation Context Strategy for a Retail Support Copilot\04-assemble-and-locate\solution\retail_context\run.py", line 137, in main
+    _t, _facts, assembled = _build(run_dir)
+                            ^^^^^^^^^^^^^^^
+  File "C:\Users\Prakhar\Downloads\1790500151\Engineer a Long-Conversation Context Strategy for a Retail Support Copilot\04-assemble-and-locate\solution\retail_context\run.py", line 49, in _build
+    facts = case_facts.extract(t, log_path=run_dir / "case_facts_call.json")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Prakhar\Downloads\1790500151\Engineer a Long-Conversation Context Strategy for a Retail Support Copilot\04-assemble-and-locate\solution\retail_context\case_facts.py", line 128, in extract
+    text, in_tok, out_tok = complete_with_system(
+                            ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Prakhar\Downloads\1790500151\Engineer a Long-Conversation Context Strategy for a Retail Support Copilot\04-assemble-and-locate\solution\retail_context\client.py", line 99, in complete_with_system
+    result = subprocess.run(
+             ^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "C:\Program Files\Python312\Lib\subprocess.py", line 1538, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 206] The filename or extension is too long
+run_id: 20260927-151222  (writing to runs\20260927-151222)
+
+[1/3] loading transcript + computing baseline token count
+      baseline transcript tokens: 47144
+[2/3] extracting case facts (LLM call)
+RUN_EXIT=1

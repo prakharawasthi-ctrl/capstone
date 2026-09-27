@@ -1,0 +1,29 @@
+Capstone test summary — actual results from this machine (no fabricated counts)
+Date (UTC): 2026-09-27
+Python: 3.12.4 (Windows win32)
+
+SYSTEM 1 — Claims Intake Agent (03-dynamic-decomposition/solution)
+Command: .venv/Scripts/python -m pytest tests/ -v  (from solution dir)
+Result: 29 collected, 29 passed, 0 failed, 0 skipped; exit code 0
+Evidence: capstone-evidence/system-1-agentic-loop/test-output.txt
+Live run: .venv/Scripts/python -m claims_intake.run --all -> exit 1, RuntimeError: ANTHROPIC_API_KEY is not set (see run-output.txt). Offline loop demo via real loop.run + scripted FakeClient: 6 turns, outcome=routed (see offline-trace.txt, trace-claim_01_kitchen_fire.jsonl).
+
+SYSTEM 2 — Retail Support Context Strategy (04-assemble-and-locate/solution)
+Command: .venv/Scripts/python -m pytest tests/ -v  (from solution dir)
+Result: 30 collected, 28 passed, 0 failed, 2 skipped; exit code 0
+Skipped: test_assembled_context_active_segment_byte_exact, test_budget_json_section_counts_sum_consistently (both skip: "no run artifacts available — run python -m retail_context.run --build first")
+Evidence: capstone-evidence/system-2-context-strategy/test-output.txt
+Live run: .venv/Scripts/python -m retail_context.run --build -> exit 1 after printing baseline 47144 tokens; case-facts LLM call via Claude Code CLI fallback crashed FileNotFoundError: [WinError 206] (argv too long on Windows). No budget.json/eval.jsonl fabricated (see run-output.txt). Deterministic offline measurements in offline-measurements.txt.
+
+SYSTEM 3 — E-Commerce Team Claude Code Config (04-plan-mode-and-explore-decision-doc/solution)
+Command: .venv/Scripts/python -m pytest tests/ -v  (from solution dir)
+Result: 35 collected, 35 passed, 0 failed, 0 skipped; exit code 0
+Evidence: capstone-evidence/system-3-claude-code/test-output.txt
+Validator: .venv/Scripts/python -m ecommerce_team_config . -> prints OK, exit code 0
+Evidence: capstone-evidence/system-3-claude-code/validator-output.txt
+
+SYSTEM 4 — Multi-Shift Quality Monitoring (04-fork-scratchpad/solution)
+Command: <short-path venv>/Scripts/python -m pytest tests/ -v  (venv at C:/Users/Prakhar/AppData/Local/Temp/opencode/s4venv due to Windows MAX_PATH install failure inside solution dir; same pinned deps)
+Result: 33 collected, 33 passed, 0 failed, 0 skipped; exit code 0
+Evidence: capstone-evidence/system-4-orchestrator/test-output.txt
+Live run: python -m shift_monitor run-shift --shift C --warm-db data/warm.sqlite --recorded-response fixtures/recorded_responses/shift_C_2026-04-30.json --since 2026-04-01T00:00:00Z -> exit 0, "shift C: 17 new defects" (see run-output.txt). Hot state 980 bytes (see state-size.txt).

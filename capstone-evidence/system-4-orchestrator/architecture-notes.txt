@@ -1,0 +1,30 @@
+System 4 — Layer 3 orchestration architecture (from actual source, solution 04-fork-scratchpad)
+
+Hot/warm/cold state:
+- File: shift_monitor/state.py; class HotState (pydantic: recent_defect_hashes capped at 20, current_shift_summary, active_alerts, threshold_statuses); method write_atomic() (atomic write via tmp+rename); size budget enforced by test_hotstate_roundtrip_and_size_budget.
+- File: shift_monitor/warm.py; class WarmStore (SQLite); SCHEMA_SQL creates defects table + idx_defects_shift_ts + idx_defects_ts; methods initialize(), insert_many(), defects_since(since_ts, limit=50), explain_defects_since(), top_components_for_month(), count_for_month().
+- File: shift_monitor/cold.py; class ColdStore monthly summaries (writes_monthly_summary, handles_empty_month).
+- State sizes: hot_state.json = 980 bytes after shift-C run (see state-size.txt; under ~5 KB budget). Warm tier holds full 40-defect history in data/warm.sqlite; model never sees it.
+
+SQL filtering (push work down):
+- File: shift_monitor/warm.py; WarmStore.defects_since(): single indexed query "SELECT * FROM defects WHERE ts > ? ORDER BY ts DESC LIMIT ?" — SQL-side filtering only, no Python-side severity/component/time filtering (enforced by test_gather_new_defects_has_no_python_side_filtering and test_defects_since_uses_index_and_does_not_load_full_table).
+- EXPLAIN QUERY PLAN output: "SEARCH defects USING INDEX idx_defects_ts (ts>?)".
+- This run: warm total 40 defects; slice since 2026-04-01T00:00:00Z returned 17 rows (see run-output.txt "shift C: 17 new defects"). Full history stays in SQLite; only the 17-row slice enters the prompt.
+- File: shift_monitor/pipeline.py; gather_new_defects(warm, since_ts, limit=50) is pure passthrough to warm.defects_since (test_gather_new_defects_is_pure_passthrough_to_sql).
+
+Invocation pipeline:
+- File: shift_monitor/pipeline.py; run_shift() — gather_new_defects -> build_rich_prompt (stays under 4000 chars; distinct thin/rich/resumed invocation shapes, test_invocation_shapes_are_distinct) -> exactly one client.complete() call (test_run_shift_invokes_client_exactly_once_and_writes_state) -> parse hot-state proposal -> HotState.write_atomic + Scratchpad.append. CLI entry: shift_monitor/__main__.py `python -m shift_monitor run-shift --shift C --warm-db ... --recorded-response ... --since ...`.
+- Client boundary: shift_monitor/client.py; RecordedClaudeClient replays fixtures/recorded_responses/shift_C_2026-04-30.json offline (no API spend); AnthropicClaudeClient requires ANTHROPIC_API_KEY.
+
+Crash recovery + staleness decision:
+- File: shift_monitor/manifest.py; classes Step / ManifestState(complete, steps) / Manifest (append_step with fsync; load() marks complete iff last step name == "complete"; missing file -> empty state).
+- File: shift_monitor/recovery.py; constant STALE_RESUME_THRESHOLD_MINUTES = 30 (~1/16 of an 8h shift); function decide(state, now): empty -> "fresh"; complete -> "fresh"; last step within 30 min -> "resume" else "fresh".
+- Demonstrated (see fork-recovery-demo.txt): fresh crash (10 min) -> resume; stale crash (60 min) -> fresh; complete manifest -> fresh.
+- Fresh start injects a summary of findings already captured (resumed prompt has both sections — test_resumed_prompt_has_both_sections); more reliable than resuming because a stale partial's working set no longer matches the current shift.
+
+Fork creation + scratchpad isolation + merge:
+- File: shift_monitor/fork.py; fork_for_hypothesis(base_hot_state_path, hypothesis_id, forks_root) creates data/forks/<hypothesis_id>/ via shutil.copyfile (base untouched); merge_findings() reads each fork scratchpad via Scratchpad.read() and re-appends through Scratchpad(main).append (fsync semantics uniform).
+- File: shift_monitor/scratchpad.py; ScratchpadEntry (hypothesis_id, evidence, conclusion, ts); Scratchpad.append()/read() JSONL.
+- Demonstrated: forks lot-2026-0430-B-dielectric and bank-C-7-calibration-drift each got an isolated scratchpad.jsonl (1 entry each, no cross-contamination); base hot_state.json unchanged at 980 bytes; merge appended both into data/shift_scratchpad.jsonl (now 3 lines: 1 shift entry + 2 fork findings).
+
+Run evidence files: run-output.txt (shift C, 17 new defects, exit 0), hot_state.json (980 bytes), shift_scratchpad.jsonl (3 lines), manifest.jsonl, recorded-response.json, fork-recovery-demo.txt, test-output.txt (33 passed).
