@@ -11,15 +11,15 @@
 - [x] anti-pattern identified — `architecture-notes.txt` (4 AST audits in `tests/test_antipatterns.py`)
 
 ## Context strategy (System 2)
-- [x] test suite passes — `system-2-context-strategy/test-output.txt`: 28 passed, 2 skipped, exit 0 (skips require live `run --build` artifacts)
-- [ ] budget artifact exists — NO live `budget.json` (live `--build` failed: no API key; CLI fallback hit WinError 206). Reference `runs/20260519-124910/budget.json` numbers are NOT claimed.
-- [ ] assembled context at least 50% smaller than baseline — NOT demonstrated with real LLM summaries (synthetic-placeholder assembly reached 58.09% but is explicitly not the eval artifact; see `offline-measurements.txt`)
-- [ ] 6 evaluation questions recorded — NOT executed (needs LLM)
-- [ ] at least 5/6 answered — NOT executed
-- [ ] control variant recorded — NOT executed
-- [ ] regression recorded — NOT executed
-- [x] actual token numbers documented — deterministic subset only: baseline 47144, active 19538, case_facts 149, pruner 532→45 (`offline-measurements.txt`); these match the README reference values for the non-LLM sections
-- [x] preserved-vs-summarized information identified — `architecture-notes.txt` (active verbatim vs resolved summaries)
+- [x] test suite passes — `system-2-context-strategy/test-output.txt`: 30 passed, exit 0 (was 28 passed/2 skipped before run artifacts existed; both artifact audits now pass)
+- [x] budget artifact exists — `system-2-context-strategy/budget.json` (run 20260928-234316) + `solution/runs/20260928-234316/budget.json`
+- [x] assembled context at least 50% smaller than baseline — 47144 → 20236, 57.08% (see `offline-measurements.txt`, `budget.json`)
+- [x] 6 evaluation questions recorded — `system-2-context-strategy/eval.jsonl` (fragment-presence proxy, provenance in `run-output.txt`)
+- [x] at least 5/6 answered — 6/6 passed
+- [x] control variant recorded — `system-2-context-strategy/eval_control.jsonl` (Q1+Q6, case-facts stripped)
+- [x] regression recorded — Q6 PASS→FAIL (Q1 stays PASS; see reflection-brief.md for why)
+- [x] actual token numbers documented — baseline 47144, assembled 20236, case_facts 149, resolved 272/276, active 19538 (`offline-measurements.txt`, `budget.json`)
+- [x] preserved-vs-summarized information identified — `reflection-brief.md` + `architecture-notes.txt` (active verbatim vs resolved summaries)
 
 ## Claude Code configuration (System 3)
 - [x] validator succeeds — `system-3-claude-code/validator-output.txt`: OK

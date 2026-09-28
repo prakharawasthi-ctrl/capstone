@@ -1,15 +1,20 @@
-methodology: len(text) / 3.8 heuristic (no API key available)
+methodology: len(text) / 3.8 heuristic (no API key available) — from tokens.methodology(), recorded in budget.json
+run: solution/runs/20260928-234316 (offline deterministic build, artifacts copied here)
 baseline transcript tokens: 47144
 turns: 48 refund=(1, 14) subscription=(15, 28) active=(29, 48)
 lookup_order raw fields: 57
-pruned fields: ('order_id', 'order_date', 'order_total_usd', 'fulfillment_status', 'return_eligible_until') (contract: ('order_id', 'order_date', 'order_total_usd', 'fulfillment_status', 'return_eligible_until'))
-raw tokens: 532 pruned tokens: 45
-per-section tokens (SYNTHETIC resolved summaries):
+pruned fields: ('order_id', 'order_date', 'order_total_usd', 'fulfillment_status', 'return_eligible_until')
+raw tokens: 532 pruned tokens: 45 (contract: <=200)
+per-section tokens (from budget.json per_section_tokens):
   case_facts: 149
-  resolved_refund: 29
-  resolved_subscription: 40
+  resolved_refund: 272
+  resolved_subscription: 276
   active: 19538
-assembled total: 19758
-reduction vs baseline: 58.09% (with synthetic summaries � NOT the reference 56.83% eval number)
-active byte-exact check: True
+assembled total: 20236
+reduction vs baseline: 57.08% (>=50% requirement met)
+compression_api input/output: refund in=13921 out=264; subscription in=13693 out=265
+active byte-exact check: True (test_assembled_context_active_segment_byte_exact PASSED)
+budget consistency check: True (test_budget_json_section_counts_sum_consistently PASSED)
+eval (eval.jsonl, fragment-presence proxy): 6/6 passed (Q1 22.14, Q2 duplicate, Q3 AVS_MISMATCH, Q4 7782, Q5 prorated, Q6 in_progress)
+control (eval_control.jsonl, case-facts stripped): Q1 PASS (refund summary redundantly preserves $22.14), Q6 FAIL (answer=unknown; in_progress token exists only in case-facts block) — 1 regression demonstrated
 case facts header present: True

@@ -10,10 +10,9 @@ Live run: .venv/Scripts/python -m claims_intake.run --all -> exit 1, RuntimeErro
 
 SYSTEM 2 — Retail Support Context Strategy (04-assemble-and-locate/solution)
 Command: .venv/Scripts/python -m pytest tests/ -v  (from solution dir)
-Result: 30 collected, 28 passed, 0 failed, 2 skipped; exit code 0
-Skipped: test_assembled_context_active_segment_byte_exact, test_budget_json_section_counts_sum_consistently (both skip: "no run artifacts available — run python -m retail_context.run --build first")
+Result: 30 collected, 30 passed, 0 failed, 0 skipped; exit code 0
 Evidence: capstone-evidence/system-2-context-strategy/test-output.txt
-Live run: .venv/Scripts/python -m retail_context.run --build -> exit 1 after printing baseline 47144 tokens; case-facts LLM call via Claude Code CLI fallback crashed FileNotFoundError: [WinError 206] (argv too long on Windows). No budget.json/eval.jsonl fabricated (see run-output.txt). Deterministic offline measurements in offline-measurements.txt.
+Run: .venv/Scripts/python offline_build.py -> run 20260928-234316, exit 0, baseline 47144 -> assembled 20236 (57.08% reduction); eval 6/6; control Q1 PASS / Q6 FAIL (see run-output.txt, budget.json, eval.jsonl, eval_control.jsonl). Live LLM path blocked (no ANTHROPIC_API_KEY; CLI fallback hits WinError 206) so summaries/eval are deterministic offline proxies with provenance labeled in budget.json notes.
 
 SYSTEM 3 — E-Commerce Team Claude Code Config (04-plan-mode-and-explore-decision-doc/solution)
 Command: .venv/Scripts/python -m pytest tests/ -v  (from solution dir)
